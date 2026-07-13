@@ -1,7 +1,16 @@
 [project]
 name = "club-chatbot"
 version = "0.1.0"
-description = "Add your description here"
+description = "this is the club project  to make a chatbot for cq"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "langchain",
+    "langchain-community",
+    "langchain-text-splitters",
+    "openai",
+    "chromadb",
+    "python-dotenv",
+    "langchain-openai>=1.3.5",
+    "langchain-chroma>=1.1.0",
+]
