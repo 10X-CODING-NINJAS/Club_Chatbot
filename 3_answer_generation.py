@@ -5,7 +5,7 @@ import requests
 from langchain_chroma import Chroma
 from dotenv import load_dotenv
 
-# Import the custom embeddings class from our feeding pipeline
+# importing from file 1 cuz python hates numbers in filenames (skill issue python)
 feeding_pipeline = importlib.import_module("1_data_feeding_pipeline")
 OpenRouterEmbeddings = feeding_pipeline.OpenRouterEmbeddings
 
@@ -13,7 +13,7 @@ load_dotenv()
 
 
 def get_retriever() -> object:
-    """Load the vector store and return a retriever."""
+    """Load the vector store and return a retriever. if this breaks u forgot to run file 1 first genius"""
     persistent_directory = "db/chroma_db"
 
     embedding_model = OpenRouterEmbeddings(
@@ -24,21 +24,21 @@ def get_retriever() -> object:
     db = Chroma(
         persist_directory=persistent_directory,
         embedding_function=embedding_model,
-        collection_metadata={"hnsw:space": "cosine"}
+        collection_metadata={"hnsw:space": "cosine"} # cosine similarity math stuff dont ask me how it works
     )
 
-    return db.as_retriever(search_kwargs={"k": 5})
+    return db.as_retriever(search_kwargs={"k": 5}) # top 5 chunks, change this if answers are trash
 
 
 def generate_answer(query: str, context: str) -> str:
-    """Send the query + retrieved context to an LLM via OpenRouter and return the answer."""
+    """Send the query + retrieved context to an LLM via OpenRouter. basically begging a free AI to answer lol"""
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json"
     }
 
     payload = {
-        "model": "openrouter/free",
+        "model": "openrouter/free", # free tier go brrrr we broke students
         "messages": [
             {
                 "role": "system",
@@ -61,14 +61,14 @@ def generate_answer(query: str, context: str) -> str:
         json=payload,
         headers=headers
     )
-    response.raise_for_status()
+    response.raise_for_status() # if this crashes openrouter is down again or ur api key expired fam
 
     data = response.json()
     return data["choices"][0]["message"]["content"]
 
 
 def main() -> None:
-    """Retrieve relevant docs and generate an AI answer."""
+    """the main function. if u dont know what this does idk why u are here"""
     query = input("Ask a question about the club: ")
 
     # 1. Retrieve relevant chunks

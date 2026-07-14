@@ -4,7 +4,7 @@ import requests
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 
-# Import the custom embeddings class from our feeding pipeline
+# python cant import files starting with numbers LMAOOO who designed this language
 feeding_pipeline = importlib.import_module("1_data_feeding_pipeline")
 OpenRouterEmbeddings = feeding_pipeline.OpenRouterEmbeddings
 
@@ -14,24 +14,24 @@ load_dotenv()
 # Connect to your document database
 persistent_directory = "db/chroma_db"
 embeddings = OpenRouterEmbeddings(
-    model="nvidia/llama-nemotron-embed-vl-1b-v2:free",
+    model="nvidia/llama-nemotron-embed-vl-1b-v2:free", # free nvidia model cuz we aint paying for embeddings
     api_key=os.getenv("OPENROUTER_API_KEY")
 )
 db = Chroma(persist_directory=persistent_directory, embedding_function=embeddings)
 
-# Store our conversation as messages
+# this is the AI's memory. without this it forgets everything like a goldfish
 chat_history = []
 
 
 def call_llm(messages: list[dict]) -> str:
-    """Send messages to the LLM via OpenRouter and return the response."""
+    """Send messages to the LLM via OpenRouter. pray it doesnt rate limit us"""
     headers = {
         "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
         "Content-Type": "application/json"
     }
 
     payload = {
-        "model": "openrouter/free",
+        "model": "openrouter/free", # auto picks whatever free model is available rn lol
         "messages": messages
     }
 
@@ -47,7 +47,7 @@ def call_llm(messages: list[dict]) -> str:
 
 
 def ask_question(user_question: str) -> str:
-    """Process a user question with context history and retrieved documents."""
+    """the brain of the chatbot. rewrites dumb follow-up questions into smart ones then fetches answers"""
     print(f"\n--- You asked: {user_question} ---")
 
     # Step 1: Make the question clear using conversation history
@@ -55,6 +55,7 @@ def ask_question(user_question: str) -> str:
         # Ask AI to rewrite the question as standalone so it's searchable
         messages = [
             {"role": "system", "content": "Given the chat history, rewrite the new question to be standalone and searchable. Just return the rewritten question."}
+            # ^ this is the secret sauce. turns 'who leads it?' into 'who leads coding ninjas 10x club?'
         ] + chat_history + [
             {"role": "user", "content": f"New question: {user_question}"}
         ]
@@ -65,7 +66,7 @@ def ask_question(user_question: str) -> str:
         search_question = user_question
 
     # Step 2: Find relevant documents
-    retriever = db.as_retriever(search_kwargs={"k": 3})
+    retriever = db.as_retriever(search_kwargs={"k": 3}) # top 3 chunks. increase if answers suck
     docs = retriever.invoke(search_question)
 
     print(f"Found {len(docs)} relevant documents:")
@@ -86,13 +87,14 @@ def ask_question(user_question: str) -> str:
     # Step 4: Get the answer (include chat history for context)
     messages = [
         {"role": "system", "content": "You are a helpful assistant for the Coding Ninjas 10X Club. Answer questions based on provided documents and conversation history."}
+        # ^ telling the AI what it is so it doesnt start thinking its a pirate or something
     ] + chat_history + [
         {"role": "user", "content": combined_input}
     ]
 
     answer = call_llm(messages)
 
-    # Step 5: Remember this conversation
+    # Step 5: Remember this conversation (finally the goldfish has memory)
     chat_history.append({"role": "user", "content": user_question})
     chat_history.append({"role": "assistant", "content": answer})
 
@@ -102,7 +104,7 @@ def ask_question(user_question: str) -> str:
 
 # Simple chat loop
 def start_chat() -> None:
-    """Interactive chat loop."""
+    """Interactive chat loop. type quit to escape or ctrl+c if ur impatient"""
     print("Ask me questions! Type 'quit' to exit.")
 
     while True:
