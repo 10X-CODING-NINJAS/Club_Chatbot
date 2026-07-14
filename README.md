@@ -78,30 +78,30 @@ uv run 4_context_history.py
 
 ## Roadmap
 
-### LLM Fallback Chain
+### LLM Fallback Chain - 1 - C
 - [ ] Add Mistral as a secondary LLM provider
 - [ ] Add Groq as a tertiary LLM provider
 - [ ] Add Ollama for local/offline fallback
 - [ ] Implement automatic fallback logic: if provider A fails → try B → try C
 
-### Better Dataset
+### Better Dataset - 1 - {other domains}
 - [ ] Expand `ClubQuestions.txt` with more detailed Q&A pairs
 - [ ] Add separate `.txt` files for each domain (events, team structure, recruitment, etc.)
 - [ ] Clean and normalize data formatting for better chunk quality
 - [ ] Tune `chunk_size` and `chunk_overlap` for optimal retrieval
 
-### Reranking
+### Reranking (optional)
 - [ ] Implement a reranker after initial retrieval (e.g., Cohere Rerank, cross-encoder)
 - [ ] Retrieve more chunks (top 10-15) then rerank down to top 3-5
 - [ ] Compare retrieval quality before and after reranking
 
-### Hosting & API
+### Hosting & API {everyone has to work together}
 - [ ] Host the chatbot on Vercel as a serverless function
 - [ ] Expose an OpenAI-compatible API format (`/v1/chat/completions`)
 - [ ] Add API key authentication for the hosted endpoint
 - [ ] Add rate limiting
 
-### Code Quality
+### Code Quality 1 - A
 - [ ] Make the codebase more efficient (reduce redundant API calls, batch embeddings)
 - [ ] Add error handling and retries for API calls
 - [ ] Add logging instead of print statements
