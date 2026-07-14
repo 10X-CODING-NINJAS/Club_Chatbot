@@ -4,6 +4,8 @@ A Retrieval-Augmented Generation (RAG) chatbot for the Coding Ninjas 10X Club at
 
 ## Architecture
 
+![the main architecture](arch.png)
+
 ```
 User Question
      │
