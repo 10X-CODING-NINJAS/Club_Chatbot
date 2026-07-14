@@ -103,7 +103,7 @@ def split_documents(info: list[Document], chunk_size: int = 500, chunk_overlap: 
     return chunks
 
 def create_vector_store(chunks: list[Document], persist_directory: str = "db/chroma_db") -> Chroma:
-    """Create and persist ChromaDB vector store we are using openai's small embedding model to do it as pratyush (webdev cto) gave the smallest document"""
+    """Create and persist ChromaDB vector store we are using nvidia's small embedding model to do it as pratyush (webdev cto) gave the smallest document"""
     print("Creating embeddings and storing in ChromaDB so we can store it cheaply")
 
     embedding_model = OpenRouterEmbeddings(
