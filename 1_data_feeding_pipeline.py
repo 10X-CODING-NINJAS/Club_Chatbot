@@ -1,165 +1,234 @@
+"""
+RAG Document Ingestion Pipeline
+================================
+
+Loads text documents from a directory, splits them into smaller
+chunks, generates embeddings using the OpenRouter API, and stores the
+resulting vectors in a persistent ChromaDB database.
+
+The resulting vector store can later be queried to retrieve relevant
+context for a Retrieval-Augmented Generation (RAG) chatbot.
+
+Usage:
+    Place your `.txt` source files in an `info/` folder next to this
+    script, set the OPENROUTER_API_KEY environment variable (e.g. in
+    a `.env` file), then run:
+
+        python rag_ingest.py
+
+    The first run builds the vector store in `db/chroma_db/`.
+    Subsequent runs simply load the existing store instead of
+    rebuilding it.
+"""
+
 import os
 import requests
+from dotenv import load_dotenv
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
-from dotenv import load_dotenv
 
 load_dotenv()
 
+# Embedding model used for turning text into vectors.
+EMBEDDING_MODEL_NAME = "nvidia/llama-nemotron-embed-vl-1b-v2:free"
+
+# Where source .txt files live, and where the vector database is stored.
+DEFAULT_INFO_PATH = "info"
+DEFAULT_PERSIST_DIRECTORY = "db/chroma_db"
+
 
 class OpenRouterEmbeddings(Embeddings):
-    """Custom embeddings class that calls OpenRouter API directly,
-    bypassing LangChain's strict OpenAI response parser."""
+    """
+    Embedding model that calls the OpenRouter API.
 
-    def __init__(self, model: str, api_key: str, base_url: str = "https://openrouter.ai/api/v1"):
+    Implements LangChain's `Embeddings` interface so it can be used
+    as a drop-in embedding function for LangChain vector stores
+    (e.g. Chroma).
+    """
+
+    def __init__(self, model: str, api_key: str,
+                 base_url: str = "https://openrouter.ai/api/v1"):
+        """
+        Args:
+            model: OpenRouter embedding model identifier.
+            api_key: OpenRouter API key.
+            base_url: Base URL for the OpenRouter API.
+        """
         self.model = model
         self.api_key = api_key
         self.base_url = base_url
 
     def _call_api(self, texts: list[str]) -> list[list[float]]:
-        """Make a direct HTTP request to OpenRouter's /embeddings endpoint."""
+        """
+        Send a batch of texts to the OpenRouter embedding endpoint.
+
+        Args:
+            texts: List of input strings to embed.
+
+        Returns:
+            List of embedding vectors, one per input string.
+
+        Raises:
+            requests.HTTPError: If the API request fails.
+        """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
-        payload = {
-            "model": self.model,
-            "input": texts
-        }
-        response = requests.post(f"{self.base_url}/embeddings", json=payload, headers=headers)
+        payload = {"model": self.model, "input": texts}
+
+        response = requests.post(
+            f"{self.base_url}/embeddings",
+            json=payload,
+            headers=headers,
+            timeout=60,
+        )
         response.raise_for_status()
 
         data = response.json()
-        # Extract embeddings from whatever format OpenRouter returns
-        embeddings = [item["embedding"] for item in data["data"]]
-        return embeddings
+        return [item["embedding"] for item in data["data"]]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Embed a list of documents."""
+        """Generate embeddings for a list of documents."""
         return self._call_api(texts)
 
     def embed_query(self, text: str) -> list[float]:
-        """Embed a single query."""
+        """Generate an embedding for a single query string."""
         return self._call_api([text])[0]
 
-def load_info(info_path: str = "info") -> list[Document]:
-    """this loads all the files from the info dir"""
-    print(f"Loading documents from {info_path}...")
 
+def get_embedding_model() -> OpenRouterEmbeddings:
+    """
+    Build the shared OpenRouter embedding model instance.
+
+    Returns:
+        Configured OpenRouterEmbeddings instance.
+
+    Raises:
+        ValueError: If OPENROUTER_API_KEY is not set.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "OPENROUTER_API_KEY is not set. Add it to your .env file."
+        )
+    return OpenRouterEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=api_key)
+
+
+def load_info(info_path: str = DEFAULT_INFO_PATH) -> list[Document]:
+    """
+    Load all .txt documents from the given directory.
+
+    Args:
+        info_path: Directory containing .txt files.
+
+    Returns:
+        List of LangChain Document objects, one per file.
+
+    Raises:
+        FileNotFoundError: If the directory is missing or contains
+            no .txt files.
+    """
     if not os.path.exists(info_path):
-            raise FileNotFoundError(f"The directory {info_path} does not exist. FAAAAAAAH..for gods sake add the folder")
+        raise FileNotFoundError(f"Directory '{info_path}' does not exist.")
 
-    info = []
-
-    # Iterate through the directory and read .txt files
+    documents = []
     for filename in os.listdir(info_path):
         if filename.endswith(".txt"):
             filepath = os.path.join(info_path, filename)
-            with open(filepath, 'r', encoding='utf-8') as f:
-                content = f.read()
-                # Create a LangChain Document manually
-                doc = Document(page_content=content, metadata={"source": filepath})
-                info.append(doc)
+            with open(filepath, "r", encoding="utf-8") as f:
+                documents.append(
+                    Document(
+                        page_content=f.read(),
+                        metadata={"source": filepath},
+                    )
+                )
 
-    if len(info) == 0:
-            raise FileNotFoundError(f"No .txt files found in {info_path}. nigga are u stupid add the files")
+    if not documents:
+        raise FileNotFoundError(f"No .txt files found in '{info_path}'.")
 
-    for i, doc in enumerate(info[:2]):  # Show first 2 documents
-            print(f"\nDocument {i+1}:")
-            print(f"  Source: {doc.metadata['source']}")
-            print(f"  Content length: {len(doc.page_content)} characters")
-            print(f"  Content preview: {doc.page_content[:100]}...")
-            print(f"  metadata: {doc.metadata}")
-
-    return info
+    return documents
 
 
-def split_documents(info: list[Document], chunk_size: int = 500, chunk_overlap: int = 0) -> list[Document]:
-    """Split documents into smaller chunks with overlap so basically breaking into multiple dimensions and storing them"""
-    print("Splitting documents into chunks...")
+def split_documents(
+    info: list[Document],
+    chunk_size: int = 500,
+    chunk_overlap: int = 0,
+) -> list[Document]:
+    """
+    Split documents into smaller chunks for embedding.
 
-    text_splitter = CharacterTextSplitter(
+    Smaller chunks improve retrieval accuracy in RAG systems, since
+    the chatbot can pull in just the relevant snippet instead of an
+    entire document.
+
+    Args:
+        info: Documents to split.
+        chunk_size: Maximum number of characters per chunk.
+        chunk_overlap: Number of overlapping characters between
+            consecutive chunks (helps preserve context across chunk
+            boundaries).
+
+    Returns:
+        List of chunked Document objects.
+    """
+    splitter = CharacterTextSplitter(
         chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
+        chunk_overlap=chunk_overlap,
     )
+    return splitter.split_documents(info)
 
-    chunks = text_splitter.split_documents(info)
 
-    if chunks:
+def create_vector_store(
+    chunks: list[Document],
+    embedding_model: OpenRouterEmbeddings,
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> Chroma:
+    """
+    Embed document chunks and store them in a persistent ChromaDB store.
 
-        for i, chunk in enumerate(chunks[:5]):
-            print(f"\n--- Chunk {i+1} ---")
-            print(f"Source: {chunk.metadata['source']}")
-            print(f"Length: {len(chunk.page_content)} characters")
-            print("Content:")
-            print(chunk.page_content)
-            print("-" * 50)
+    Args:
+        chunks: Document chunks to embed and store.
+        embedding_model: Embedding model to use.
+        persist_directory: Directory where the vector store is saved.
 
-        if len(chunks) > 5:
-            print(f"\n... and {len(chunks) - 5} more chunks")
-
-    return chunks
-
-def create_vector_store(chunks: list[Document], persist_directory: str = "db/chroma_db") -> Chroma:
-    """Create and persist ChromaDB vector store we are using nvidia's small embedding model to do it as pratyush (webdev cto) gave the smallest document"""
-    print("Creating embeddings and storing in ChromaDB so we can store it cheaply")
-
-    embedding_model = OpenRouterEmbeddings(
-        model="nvidia/llama-nemotron-embed-vl-1b-v2:free",
-        api_key=os.getenv("OPENROUTER_API_KEY")
-    )
-
-    # Create ChromaDB vector store
-    print("--- Creating vector store (ie: matrices) ---")
-    vectorstore = Chroma.from_documents(
+    Returns:
+        The created Chroma vector store.
+    """
+    return Chroma.from_documents(
         documents=chunks,
         embedding=embedding_model,
         persist_directory=persist_directory,
-        collection_metadata={"hnsw:space": "cosine"} #i have no idea what this does lol use ai
+        collection_metadata={"hnsw:space": "cosine"},  # cosine similarity
     )
-    print("--- Finished creating vector store ---")
 
-    print(f"Vector store created and saved to {persist_directory}")
-    return vectorstore
 
-def main() -> Chroma | None:
-    """finally making the pipeline """
-    print("=== RAG Document Ingestion Pipeline ===\n")
+def main() -> Chroma:
+    """
+    Run the RAG ingestion pipeline.
 
-    # Define paths
-    info_path = "info"
-    persistent_directory = "db/chroma_db"
+    If a vector store already exists at DEFAULT_PERSIST_DIRECTORY, it
+    is loaded directly. Otherwise, documents are loaded, split into
+    chunks, embedded, and saved as a new vector store.
 
-    # Check if vector store already exists
-    if os.path.exists(persistent_directory):
-        print("are u stupid ites already done")
+    Returns:
+        The loaded or newly created Chroma vector store.
+    """
+    embedding_model = get_embedding_model()
 
-        embedding_model = OpenRouterEmbeddings(
-            model="nvidia/llama-nemotron-embed-vl-1b-v2:free",
-            api_key=os.getenv("OPENROUTER_API_KEY")
-        )
-        vectorstore = Chroma(
-            persist_directory=persistent_directory,
+    if os.path.exists(DEFAULT_PERSIST_DIRECTORY):
+        return Chroma(
+            persist_directory=DEFAULT_PERSIST_DIRECTORY,
             embedding_function=embedding_model,
-            collection_metadata={"hnsw:space": "cosine"}
+            collection_metadata={"hnsw:space": "cosine"},
         )
-        print(f"Loaded existing vector store with {vectorstore._collection.count()} documents")
-        return vectorstore
 
-    print("Persistent directory does not exist. Initializing vector store...\n")
-
-    # 1. Loading the files
-    documents = load_info(info_path=info_path)
-
-    # 2. Chunking the files
+    documents = load_info(DEFAULT_INFO_PATH)
     chunks = split_documents(documents)
+    return create_vector_store(chunks, embedding_model, DEFAULT_PERSIST_DIRECTORY)
 
-    # 3. Embedding and Storing in Vector DB
-    vectorstore = create_vector_store(chunks, persist_directory=persistent_directory)
-
-    return vectorstore
 
 if __name__ == "__main__":
     main()
