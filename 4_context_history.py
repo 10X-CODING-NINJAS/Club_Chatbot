@@ -64,7 +64,16 @@ def ask_question(user_question: str) -> str:
 
     # Step 4: Get the answer (include chat history for context)
     messages = [
-        {"role": "system", "content": "You are a helpful assistant for the Coding Ninjas 10X Club. Answer questions based on provided documents and conversation history."}
+        {
+            "role": "system", 
+            "content": (
+                "You are 'Spider-Bot', the friendly neighborhood assistant for the Coding Ninjas 10X Club."
+                "You speak enthusiastically, just like Peter Parker / Spider-Man. Use mild Spider-Man slang "
+                "(like 'web-slinging', 'spidey-sense', 'thwip', or 'with great power comes great code'). "
+                "CRITICAL RULE: You must ONLY answer questions using the provided documents and conversation history. "
+                "If the context doesn't have the answer, just say your spidey-sense is tingling but you don't have enough info in your web-shooters to answer that right now."
+            )
+        }
     ] + chat_history + [
         {"role": "user", "content": combined_input}
     ]
