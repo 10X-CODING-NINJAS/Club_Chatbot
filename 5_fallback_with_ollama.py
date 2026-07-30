@@ -104,8 +104,10 @@ def call_groq(messages: List[Dict]) -> str:
 
 
 def call_ollama(messages: List[Dict]) -> str:
+    # Defaults to localhost if not provided, but we will change this in .env
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
     model = os.getenv("OLLAMA_MODEL", "llama3.2")
+    api_key = os.getenv("OLLAMA_API_KEY") 
     timeout = _get_timeout()
 
     url = f"{base_url}/api/chat"
@@ -114,8 +116,13 @@ def call_ollama(messages: List[Dict]) -> str:
         "messages": messages,
         "stream": False
     }
+    
+    # Inject the Bearer token for cloud authentication
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
-    response = requests.post(url, json=payload, timeout=timeout)
+    response = requests.post(url, headers=headers, json=payload, timeout=timeout)
     response.raise_for_status()
 
     data = response.json()
@@ -124,11 +131,16 @@ def call_ollama(messages: List[Dict]) -> str:
 
 def check_ollama_health() -> bool:
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+    api_key = os.getenv("OLLAMA_API_KEY")
     url = f"{base_url}/api/tags"
     timeout = _get_timeout()
 
+    headers = {}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
     try:
-        response = requests.get(url, timeout=timeout)
+        response = requests.get(url, headers=headers, timeout=timeout)
         response.raise_for_status()
         return True
     except requests.exceptions.RequestException:
