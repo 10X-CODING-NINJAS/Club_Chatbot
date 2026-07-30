@@ -51,11 +51,7 @@ def ask_question(user_question: str) -> str:
     retriever = db.as_retriever(search_kwargs={"k": 3}) 
     docs = retriever.invoke(search_question)
 
-    print(f"Found {len(docs)} relevant documents:")
-    for i, doc in enumerate(docs, 1):
-        lines = doc.page_content.split('\n')[:2]
-        preview = '\n'.join(lines)
-        print(f"  Doc {i}: {preview}...")
+    # removed the documents print statement that were used to answer qs
 
     # Step 3: Create final prompt with context
     combined_input = f"""Based on the following documents, please answer this question: {user_question}
