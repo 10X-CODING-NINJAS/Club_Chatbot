@@ -2,7 +2,7 @@
 LLM Provider Layer for RAG chatbot.
 
 Abstracts communication with multiple LLM providers.
-Cascade: OpenRouter (Base) -> Mistral (Fallback 1) -> Ollama (Fallback 2)
+Cascade: OpenRouter (Base) -> Mistral (Fallback 1) -> Groq (Fallback 2) -> Ollama (Local)
 """
 import os
 from typing import List, Dict
@@ -77,6 +77,32 @@ def call_mistral(messages: List[Dict]) -> str:
     return data["choices"][0]["message"]["content"]
 
 
+def call_groq(messages: List[Dict]) -> str:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        raise ConfigurationError("GROQ_API_KEY environment variable is missing.")
+
+    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile") 
+    timeout = _get_timeout()
+
+    # Groq uses an OpenAI-compatible endpoint schema
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": model,
+        "messages": messages
+    }
+
+    response = requests.post(url, headers=headers, json=payload, timeout=timeout)
+    response.raise_for_status()
+
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
+
+
 def call_ollama(messages: List[Dict]) -> str:
     base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
     model = os.getenv("OLLAMA_MODEL", "llama3.2")
@@ -119,7 +145,7 @@ def call_llm_with_fallback(messages: List[Dict]) -> str:
     except (ConfigurationError, requests.exceptions.RequestException) as e:
         print(f"[Fallback] OpenRouter failed: {e}")
 
-    # Tier 2: Mistral (Cloud Fallback)
+    # Tier 2: Mistral (First Cloud Fallback)
     print("Switching to Mistral...")
     try:
         response = call_mistral(messages)
@@ -128,7 +154,16 @@ def call_llm_with_fallback(messages: List[Dict]) -> str:
     except (ConfigurationError, requests.exceptions.RequestException) as e:
         print(f"[Fallback] Mistral failed: {e}")
 
-    # Tier 3: Ollama (Local Fallback)
+    # Tier 3: Groq (Second Cloud Fallback)
+    print("Switching to Groq...")
+    try:
+        response = call_groq(messages)
+        print("Groq request successful.")
+        return response
+    except (ConfigurationError, requests.exceptions.RequestException) as e:
+        print(f"[Fallback] Groq failed: {e}")
+
+    # Tier 4: Ollama (Local Hardware Fallback)
     print("Switching to Ollama...")
     if check_ollama_health():
         try:
@@ -138,4 +173,4 @@ def call_llm_with_fallback(messages: List[Dict]) -> str:
         except requests.exceptions.RequestException as e:
             raise RuntimeError(f"Ollama request failed: {e}") from e
     else:
-        raise RuntimeError("Complete System Failure: OpenRouter and Mistral failed, and Ollama is unhealthy.")
+        raise RuntimeError("Complete System Failure: All cloud providers failed, and Ollama is unhealthy.")
