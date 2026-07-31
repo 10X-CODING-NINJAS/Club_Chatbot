@@ -1,0 +1,155 @@
+# ABOUT THE CLUB
+
+**1) What is the Coding Ninjas 10X Club at SRM Institute of Science and Technology?**
+The Coding Ninjas 10X Club is a student-led technical community that promotes innovation, coding, teamwork, and leadership through workshops, hackathons, and flagship events.
+
+**2) Why should a first-year student join Coding Ninjas 10x club?**
+Joining Coding Ninjas 10X Club gives first-year students the opportunity to learn new skills, work on exciting projects and events, build meaningful connections, and grow both personally and professionally in a collaborative environment.
+
+**3) What is the primary objective of the Coding Ninjas 10X club?**
+The primary objective of the Coding Ninjas 10X Club is to create engaging, impactful events that foster learning, innovation, collaboration, and a strong technical community on campus.
+
+**4) What events do Coding Ninjas 10X organize throughout the year?**
+2, CAD (Ctrl+Alt+Delete) and CampusQuest
+
+**5) What skills can members develop by being part of the club?**
+Members can develop technical skills, problem-solving abilities, teamwork, leadership, communication, event management, and project development skills while collaborating with like-minded peers.
+
+**6) Besides coding, what other opportunities does the club provide?**
+Beyond coding, the club offers opportunities to organize and manage events, work on corporate collaborations and partnerships, develop leadership and communication skills, and gain hands-on experience in planning and executing large-scale initiatives.
+
+**7) What makes Coding Ninjas 10X different from other technical clubs?**
+Coding Ninjas 10X stands out through its focus on large-scale, experience-driven events that go beyond conventional workshops and coding contests. Members get the opportunity to plan, execute, and innovate while working alongside a close-knit community that values creativity, ownership, and continuous growth.
+
+**8) Do technical applicants need to showcase personal projects?**
+No, showcasing personal projects is not mandatory. However, having projects to demonstrate your interest, skills, and initiative is always appreciated.
+
+**9) What is the recruitment process for the Coding Ninjas 10X Club?**
+The recruitment process begins with a Google Form application, followed by a personal interview for shortlisted candidates.
+
+**10) How can I get promoted to higher positions at coding ninjas club?**
+Show up in the club regularly, contribute your ideas and take initiatives in club activities and take up opportunities as team leads and for promotions.
+
+**11) How can I stay updated about the club activities?**
+You can stay updated on all our events, recruitments, workshops, and announcements by following our Instagram page, @srm_cn.
+
+**12) Are there opportunities to lead projects or events?**
+Yes. Active members who consistently demonstrate initiative, responsibility, and leadership are given opportunities to lead projects, organize events, and take on greater responsibilities within the club.
+
+**13) What are all the domains in technical and non-technical part of the club?**
+Technical domains: Web development, App development, AI/ML
+Non-technical domains: Corporate, Creatives, Sponsorship, Editorial
+
+**14) Can members switch domains after joining?**
+Domain switching is not permitted after joining. However, members can contribute to and be a part of multiple domains based on the club’s requirements and their interests.
+
+
+# RECRUITMENT
+
+**1) Who are all eligible to apply for recruitments?**
+All first and second years in SRMIST.
+
+**2) How does the recruitment process go on for non-technical domains?**
+The recruitment process begins with a Google Form application, followed by a personal interview for shortlisted candidates.
+
+**3) Can I share ideas for future club events during the interview?**
+Yes, absolutely. We encourage applicants to share their ideas and suggestions.
+
+**4) Can I apply again in the future if I am not selected this time?**
+Yes. You are welcome to apply in future recruitment drives.
+
+**5) What is the biggest mistake applicants make during interviews?**
+Being unprepared, lacking confidence, giving dishonest responses and usage of AI.
+
+**6) Can first-year students take up leadership roles later on?**
+Yes. Dedicated and active members can take on leadership roles as they grow within the club.
+
+**7) How are candidates evaluated during the recruitment process?**
+Candidates are assessed based on their communication, enthusiasm, problem-solving approach, and suitability for the selected domain.
+
+**8) I'm interested in the technical domains, but I'm still learning. Can I still apply?**
+Yes. We welcome learners who are eager to improve and contribute.
+
+**9) Can I apply for more than one domain during recruitment?**
+Yes. You can apply for multiple domains based on your interests and skills.
+
+**10) I'm interested in the technical domains, but I'm still learning. Can I still apply?**
+Yes. You don't need to know everything before applying. A strong willingness to learn, curiosity, and consistency are what we look for.
+
+**11) Will I get a chance to work on real projects after joining the club?**
+Yes. Members get opportunities to work on club projects, events, and collaborative initiatives.
+
+**12) Apart from organizing events, what else do club members get to do?**
+Members can participate in workshops, hackathons, technical sessions, networking events, collaborative projects, and skill-development activities.
+
+
+# CAMPUS QUEST (CQ)
+
+**1) What should participants bring on the event day for Campus Quest 5.0?**
+Participants should bring their college ID card and at least one laptop per team. Any additional requirements will be communicated by the organizers before the event.
+
+**2) How many members can be on a team?**
+Each team can have a maximum of 4 members.
+
+**3) Is prior coding experience necessary to participate in Campus Quest 5.0?**
+No. Basic coding knowledge is sufficient, and several rounds focus on logical thinking, teamwork, and problem-solving rather than advanced programming.
+
+**4) Are there prizes or certificates for winners of Campus Quest 5.0?**
+Yes. Winning teams will receive exciting prizes, and certificates will be provided to both winners and participants.
+
+**5) Where can I find further details about Campus Quest 5.0?**
+Updates regarding registrations, rules, and announcements will be posted on the club's official Instagram page @srm_cn.
+
+**6) Can team members be from different departments or years?**
+Teams can include students from different departments, but all members must be first-year students.
+
+**7) Can a team continue if one member has to leave midway?**
+Yes, the remaining members may continue the competition, provided they meet the event rules and organizer guidelines.
+
+**8) What happens if a team member arrives late to the event or venue?**
+Late arrivals may miss the briefing or the start of the event. Teams are advised to report on time, as delays may affect their participation.
+
+**9) How are ties resolved in the Campus Quest 5.0 leaderboard?**
+If teams are tied, factors such as completion time, checkpoint timings, and rule adherence may be considered to determine the final rankings.
+
+**10) How does Campus Quest combine coding, logical reasoning, and on-campus exploration into a single competition?**
+Participants solve coding challenges, crack logical puzzles, and navigate campus checkpoints, creating a unique blend of technical and adventure-based gameplay.
+
+**11) What makes Campus Quest different from a traditional treasure hunt?**
+Campus Quest isn't just about finding the next clue, it is about thinking, strategizing, and adapting. Participants navigate through the campus while solving coding and logical challenges, earning and utilizing virtual currency, and making real-time strategic decisions. The combination of technology, exploration, and competitive gameplay create an experience which is far more immersive than a conventional treasure hunt.
+
+**12) Can you explain the format and progression of the three rounds in Campus Quest 5.0?**
+The event begins with an elimination round, progressed to a campus-wide challenge involving strategy and problem-solving, and concluded with an intense final round where the top teams compete for victory.
+
+**13) For Campus Quest 5.0, if multiple teams arrive at the same checkpoint simultaneously, how is the order of participation decided?**
+Volunteers will manage the queue fairly, typically on a first-come, first-served basis, while ensuring that no team gains an unfair advantage.
+
+**14) Is Campus Quest an individual event or a team event?**
+Campus Quest is a team-based competition that emphasizes collaboration, communication, and collective problem-solving.
+
+**15) Why is Campus Quest conducted primarily for first-year students?**
+It helps freshers interact with peers, explore the campus, and experience technical events early in their college journey.
+
+**16) How does Campus Quest help new students become familiar with the campus?**
+By visiting different checkpoints across the university, participants naturally explore important locations while solving challenges.
+
+**17) What is the registration process for Campus Quest 5.0?**
+Teams can register through the official registration link released by the club. Registration is confirmed once all required details are submitted successfully.
+
+**18) Why is Campus Quest conducted before the club recruitments?**
+It introduces freshers to the club's culture, event management, and community, helping them understand what being a member is like before recruitment begins.
+
+**19) How does Campus Quest help me understand what the Coding Ninjas 10X Club is all about?**
+The event showcases the club's focus on innovation, teamwork, technical learning, and large-scale event execution through an engaging experience.
+
+**20) Will participating in Campus Quest give me an advantage during club recruitments?**
+Top 3 teams will be directly eligible for interview rounds during recruitments.
+
+**21) If I enjoy Campus Quest, how can I become a part of the Coding Ninjas 10X Club?**
+You can apply during the club's official recruitment drive and participate in the selection process for your preferred domain.
+
+**22) Is Campus Quest meant only for competition, or is it also a way to meet new people and explore the campus?**
+It's both. Along with competing, participants get the opportunity to make new friends, work in teams, and become more familiar with the campus and the Coding Ninjas community.
+
+**23) Is there any registration fees for CampusQuest 5.0?**
+No, the event is completely free.
