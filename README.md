@@ -8,9 +8,9 @@ RAG-powered chatbot API for the **Coding Ninjas 10X Club**. Meet **Spider-Bot** 
 Website (Frontend)  →  FastAPI Server (app.py)  →  ChromaDB (Vector Store)
                                 ↓
                     LLM Fallback Chain (5_fallback_with_ollama.py)
-                    ├── Tier 1: OpenRouter
-                    ├── Tier 2: Mistral
-                    ├── Tier 3: Groq
+                    ├── Tier 1: Mistral
+                    ├── Tier 2: Groq
+                    ├── Tier 3: OpenRouter
                     └── Tier 4: Ollama
 ```
 
@@ -216,10 +216,26 @@ function ChatBot() {
 
 ## Deployment
 
-For production hosting, you can deploy this on any cloud VM:
+### Deploy on Railway (Recommended)
+1. Go to [railway.app](https://railway.app) and sign in with GitHub.
+2. Click **New Project** → **Deploy from GitHub Repo**.
+3. Select the `Club_Chatbot` repository. Railway will automatically detect the `Procfile`.
+4. Once deployed, click on your service, go to the **Variables** tab, and click **Raw Editor**. Paste your `.env` content:
+   ```env
+   OPENROUTER_API_KEY=your_key_here
+   OPENROUTER_MODEL=openrouter/free
+   MISTRAL_API_KEY=your_key_here
+   MISTRAL_MODEL=mistral-large-latest
+   GROQ_API_KEY=your_key_here
+   GROQ_MODEL=llama-3.3-70b-versatile
+   REQUEST_TIMEOUT=30
+   ```
+5. Click **Update Variables**.
+6. Go to **Settings** → **Networking** → **Generate Domain** to get your public API URL.
 
+### Deploy on a VPS (DigitalOcean, AWS, etc.)
 ```bash
-# Install uv on your server
+# Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone and setup
@@ -230,15 +246,9 @@ uv sync
 # Create .env with your API keys
 nano .env
 
-# Run with production settings
-uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2
+# Run in background
+nohup uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2 &
 ```
-
-**Free/cheap hosting options:**
-- [Railway](https://railway.app) — deploy from GitHub
-- [Render](https://render.com) — free tier available
-- [Fly.io](https://fly.io) — generous free tier
-- Any VPS (DigitalOcean, AWS EC2, etc.)
 
 ## Tech Stack
 
@@ -247,7 +257,7 @@ uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2
 | API Framework | FastAPI |
 | Vector DB | ChromaDB (local, persistent) |
 | Embeddings | `nvidia/llama-nemotron-embed-vl-1b-v2:free` via OpenRouter |
-| LLM | 4-tier fallback: OpenRouter → Mistral → Groq → Ollama |
+| LLM | 4-tier fallback: Mistral → Groq → OpenRouter → Ollama |
 | Orchestration | LangChain |
 | Package Manager | uv |
 
