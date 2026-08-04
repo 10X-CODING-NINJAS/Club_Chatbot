@@ -2,7 +2,7 @@
 LLM Provider Layer for RAG chatbot.
 
 Abstracts communication with multiple LLM providers.
-Cascade: OpenRouter (Base) -> Mistral (Fallback 1) -> Groq (Fallback 2) -> Ollama (Local)
+Cascade: Mistral (Base) -> Groq (Fallback 1) -> OpenRouter (Fallback 2) -> Ollama (Local)
 """
 import os
 from typing import List, Dict
@@ -148,17 +148,8 @@ def check_ollama_health() -> bool:
 
 
 def call_llm_with_fallback(messages: List[Dict]) -> str:
-    # Tier 1: OpenRouter (Base)
-    print("Trying OpenRouter...")
-    try:
-        response = call_openrouter(messages)
-        print("OpenRouter request successful.")
-        return response
-    except (ConfigurationError, requests.exceptions.RequestException) as e:
-        print(f"[Fallback] OpenRouter failed: {e}")
-
-    # Tier 2: Mistral (First Cloud Fallback)
-    print("Switching to Mistral...")
+    # Tier 1: Mistral (Base)
+    print("Trying Mistral...")
     try:
         response = call_mistral(messages)
         print("Mistral request successful.")
@@ -166,7 +157,7 @@ def call_llm_with_fallback(messages: List[Dict]) -> str:
     except (ConfigurationError, requests.exceptions.RequestException) as e:
         print(f"[Fallback] Mistral failed: {e}")
 
-    # Tier 3: Groq (Second Cloud Fallback)
+    # Tier 2: Groq (First Cloud Fallback)
     print("Switching to Groq...")
     try:
         response = call_groq(messages)
@@ -174,6 +165,15 @@ def call_llm_with_fallback(messages: List[Dict]) -> str:
         return response
     except (ConfigurationError, requests.exceptions.RequestException) as e:
         print(f"[Fallback] Groq failed: {e}")
+
+    # Tier 3: OpenRouter (Second Cloud Fallback)
+    print("Switching to OpenRouter...")
+    try:
+        response = call_openrouter(messages)
+        print("OpenRouter request successful.")
+        return response
+    except (ConfigurationError, requests.exceptions.RequestException) as e:
+        print(f"[Fallback] OpenRouter failed: {e}")
 
     # Tier 4: Ollama (Local Hardware Fallback)
     print("Switching to Ollama...")
