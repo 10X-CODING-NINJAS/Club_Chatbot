@@ -1,126 +1,256 @@
-# 🤖 Club Chatbot — RAG Pipeline FULLY AI GENRATED i dont have time to do a readme
+# 🕷️ Club Chatbot API
 
-A Retrieval-Augmented Generation (RAG) chatbot for the Coding Ninjas 10X Club at SRM Institute of Science and Technology. It answers questions about the club using only verified club data — no hallucinations.
+RAG-powered chatbot API for the **Coding Ninjas 10X Club**. Meet **Spider-Bot** — your friendly neighborhood assistant that answers questions about the club using verified club data.
 
 ## Architecture
 
-![the main architecture](arch.png)
-
 ```
-User Question
-     │
-     ▼
-┌─────────────────────────┐
-│  4_context_history.py   │  ← Rewrites vague follow-ups into standalone queries
-│  (Conversation Memory)  │     using chat history
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  ChromaDB Vector Store  │  ← Searches for top K most relevant text chunks
-│  (db/chroma_db)         │     using cosine similarity
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  OpenRouter LLM         │  ← Generates a grounded answer using ONLY
-│  (openrouter/free)      │     the retrieved context
-└─────────────────────────┘
+Website (Frontend)  →  FastAPI Server (app.py)  →  ChromaDB (Vector Store)
+                                ↓
+                    LLM Fallback Chain (5_fallback_with_ollama.py)
+                    ├── Tier 1: OpenRouter
+                    ├── Tier 2: Mistral
+                    ├── Tier 3: Groq
+                    └── Tier 4: Ollama
 ```
 
-### Pipeline Files
+**How it works:**
+1. User asks a question via the `/chat` API
+2. The question is embedded and searched against club data in ChromaDB
+3. Relevant chunks + conversation history are sent to the LLM
+4. Spider-Bot responds in character 🕸️
 
-| File | Purpose |
-|------|---------|
-| `1_data_feeding_pipeline.py` | Loads `.txt` files → chunks them → embeds via OpenRouter → stores in ChromaDB |
-| `2_data_retrieval_pipleine.py` | Connects to ChromaDB → retrieves top K relevant chunks for a query |
-| `3_answer_generation.py` | Retrieves chunks + sends them to an LLM to generate an answer |
-| `4_context_history.py` | Full chatbot with conversation memory, query rewriting, retrieval, and answer generation |
+## Project Structure
 
-### Key Components
-
-- **`OpenRouterEmbeddings`** — Custom LangChain `Embeddings` class that calls OpenRouter's `/embeddings` endpoint directly via `requests`, bypassing LangChain's strict OpenAI response parser.
-- **`call_llm()`** — Sends chat messages to OpenRouter's `/chat/completions` endpoint using `openrouter/free` (auto-routes to a free model).
-- **ChromaDB** — Local vector database. Stores text chunks as embedding vectors. Uses cosine similarity for search.
+```
+├── app.py                      # FastAPI server (main entry point)
+├── 1_data_feeding_pipeline.py  # Document ingestion → ChromaDB
+├── 5_fallback_with_ollama.py   # LLM provider cascade
+├── info/                       # Source .txt files for the knowledge base
+│   └── ClubQuestions.txt
+├── pyproject.toml              # Dependencies
+└── .env                        # API keys (not in git)
+```
 
 ## Setup
 
-```bash
-# Clone the repo
-git clone <repo-url>
-cd Club_Chatbot
+### 1. Clone & install dependencies
 
-# Install dependencies
+```bash
+git clone git@github.com:10X-CODING-NINJAS/Club_Chatbot.git
+cd Club_Chatbot
+uv sync
+```
+
+### 2. Create your `.env` file
+
+```env
+# Required — used for embeddings + Tier 1 LLM
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=openrouter/free
+
+# Optional fallbacks (configure whichever you have)
+MISTRAL_API_KEY=your_mistral_api_key
+GROQ_API_KEY=your_groq_api_key
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
+
+# Timeout (seconds)
+REQUEST_TIMEOUT=30
+```
+
+### 3. Run the server
+
+```bash
+uv run uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The server will automatically ingest data from `info/` on first startup.
+
+**API docs** will be available at: `http://localhost:8000/docs`
+
+## API Endpoints
+
+### `POST /chat` — Send a message
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "What is Coding Ninjas 10X Club?"}'
+```
+
+**Request:**
+```json
+{
+  "message": "What is Coding Ninjas 10X Club?",
+  "session_id": "optional-uuid-for-multi-turn-chat"
+}
+```
+
+**Response:**
+```json
+{
+  "response": "Hey there, web-slinger! The Coding Ninjas 10X Club is...",
+  "session_id": "a1b2c3d4-e5f6-..."
+}
+```
+
+> 💡 **Multi-turn chat:** Save the `session_id` from the first response and send it with subsequent messages to maintain conversation context.
+
+### `POST /chat/reset` — Reset a session
+
+```bash
+curl -X POST http://localhost:8000/chat/reset \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "your-session-id"}'
+```
+
+### `GET /health` — Health check
+
+```bash
+curl http://localhost:8000/health
+```
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "vector_store": true
+}
+```
+
+### `POST /ingest` — Re-ingest documents
+
+Rebuilds the vector store from `info/` directory. Call this after updating the `.txt` files.
+
+```bash
+curl -X POST http://localhost:8000/ingest
+```
+
+## Website Integration
+
+### JavaScript (Fetch API)
+
+```javascript
+// Generate a session ID once per user/conversation
+const sessionId = crypto.randomUUID();
+
+async function sendMessage(message) {
+  const response = await fetch('http://YOUR_SERVER:8000/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: message,
+      session_id: sessionId
+    })
+  });
+
+  const data = await response.json();
+  return data.response;
+}
+
+// Usage
+const answer = await sendMessage("What is Coding Ninjas?");
+console.log(answer);
+```
+
+### React Example
+
+```jsx
+import { useState, useRef } from 'react';
+
+const API_URL = 'http://YOUR_SERVER:8000';
+
+function ChatBot() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const sessionId = useRef(crypto.randomUUID());
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMsg = input;
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg,
+          session_id: sessionId.current
+        })
+      });
+
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'bot', text: data.response }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'bot', text: 'Oops! Something went wrong.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="messages">
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role}>{msg.text}</div>
+        ))}
+        {loading && <div className="bot">Thinking...</div>}
+      </div>
+      <input
+        value={input}
+        onChange={e => setInput(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && sendMessage()}
+        placeholder="Ask Spider-Bot..."
+      />
+      <button onClick={sendMessage}>Send</button>
+    </div>
+  );
+}
+```
+
+## Deployment
+
+For production hosting, you can deploy this on any cloud VM:
+
+```bash
+# Install uv on your server
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and setup
+git clone git@github.com:10X-CODING-NINJAS/Club_Chatbot.git
+cd Club_Chatbot
 uv sync
 
-# Add your OpenRouter API key
-echo 'OPENROUTER_API_KEY=your_key_here' > .env
+# Create .env with your API keys
+nano .env
 
-# Run the ingestion pipeline (only needed once)
-uv run 1_data_feeding_pipeline.py
-
-# Start the chatbot
-uv run 4_context_history.py
+# Run with production settings
+uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2
 ```
+
+**Free/cheap hosting options:**
+- [Railway](https://railway.app) — deploy from GitHub
+- [Render](https://render.com) — free tier available
+- [Fly.io](https://fly.io) — generous free tier
+- Any VPS (DigitalOcean, AWS EC2, etc.)
 
 ## Tech Stack
 
-- **Python 3.13** with `uv` for dependency management
-- **LangChain** for document processing and vector store abstraction
-- **ChromaDB** for local vector storage
-- **OpenRouter** for free embeddings (`nvidia/llama-nemotron-embed-vl-1b-v2:free`) and free LLM inference (`openrouter/free`)
+| Component | Technology |
+|-----------|------------|
+| API Framework | FastAPI |
+| Vector DB | ChromaDB (local, persistent) |
+| Embeddings | `nvidia/llama-nemotron-embed-vl-1b-v2:free` via OpenRouter |
+| LLM | 4-tier fallback: OpenRouter → Mistral → Groq → Ollama |
+| Orchestration | LangChain |
+| Package Manager | uv |
 
-## Branch Rules
+## Team
 
-- **`main`** — Production. Do NOT push directly.
-- **`dev`** — Development. Do NOT merge directly. Create pull requests.
-- Feature branches → PR into `dev` → PR into `main`.
-
----
-
-## Roadmap
-
-### LLM Fallback Chain - 1 - C
-- [ ] Add Mistral as a secondary LLM provider
-- [ ] Add Groq as a tertiary LLM provider
-- [ ] Add Ollama for local/offline fallback
-- [ ] Implement automatic fallback logic: if provider A fails → try B → try C
-
-### Better Dataset - 1 - {other domains}
-- [ ] Expand `ClubQuestions.txt` with more detailed Q&A pairs
-- [ ] Add separate `.txt` files for each domain (events, team structure, recruitment, etc.)
-- [ ] Clean and normalize data formatting for better chunk quality
-- [ ] Tune `chunk_size` and `chunk_overlap` for optimal retrieval
-
-### Reranking (optional)
-- [ ] Implement a reranker after initial retrieval (e.g., Cohere Rerank, cross-encoder)
-- [ ] Retrieve more chunks (top 10-15) then rerank down to top 3-5
-- [ ] Compare retrieval quality before and after reranking
-
-### Hosting & API {everyone has to work together}
-- [ ] Host the chatbot on Vercel as a serverless function
-- [ ] Expose an OpenAI-compatible API format (`/v1/chat/completions`)
-- [ ] Add API key authentication for the hosted endpoint
-- [ ] Add rate limiting
-
-### Code Quality 1 - A
-- [ ] Make the codebase more efficient (reduce redundant API calls, batch embeddings)
-- [ ] Add error handling and retries for API calls
-- [ ] Add logging instead of print statements
-- [ ] Write unit tests for core functions
-
----
-
-## Learning Resources
-
-All tutorials and notes are in the `notes+tutorials/` folder:
-
-| File | What You'll Learn |
-|------|-------------------|
-| `basic-notes.md` | Core RAG concepts |
-| `1_data_feeding_pipeline_tutorial.md` | How to build the ingestion pipeline |
-| `2_data_retrieval_pipeline_tutorial.md` | How to build the retrieval pipeline |
-| `4_context_history_tutorial.md` | How to build conversation memory |
-| `working_of_cosine_similarity.md` | How vector search math works |
-
-> **Tip:** Upload the tutorial files to [NotebookLM](https://notebooklm.google.com/) or paste them into any LLM for an interactive learning experience.
+Built by the **10X Coding Ninjas** 🥷
