@@ -209,7 +209,7 @@ def chat(request: ChatRequest):
 
         If the answer is available above, answer it directly.
         - If the answer is not present in the club information, respond EXACTLY with:
-  "My spidey-sense is tingling, but I just can't web-sling my way to an answer with the info I have! So For more info Visit our Help Desk at UB or DM us at srm_cn."
+  "My spidey-sense is tingling, but I just can't web-sling my way to an answer with the info I have! So for more info visit our Help Desk at UB or DM us on our Instagram Page - @srm_cn."
 
         INSTRUCTIONS:
         Answer the QUESTION directly using the RELEVANT CLUB INFORMATION.
@@ -319,7 +319,7 @@ IMPORTANT:
             answer = (
                 "My spidey-sense is tingling, but I just can't web-sling "
                 "my way to an answer with the info I have! So For more info "
-                "Visit our Help Desk at UB or DM us at srm_cn."
+                "visit our Help Desk at UB or DM us on our Instagram page - @srm_cn."
     )
 
         # Step 5: Update history

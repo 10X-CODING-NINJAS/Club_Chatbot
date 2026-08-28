@@ -10,7 +10,7 @@ Joining Coding Ninjas 10X Club gives first-year students the opportunity to lear
 The primary objective of the Coding Ninjas 10X Club is to create engaging, impactful events that foster learning, innovation, collaboration, and a strong technical community on campus.
 
 **4) What events do Coding Ninjas 10X organize throughout the year?**
-2, CAD (Ctrl+Alt+Delete) and CampusQuest
+We have 2 flagship events, CAD (Ctrl+Alt+Delete) and Campus Quest
 
 **5) What skills can members develop by being part of the club?**
 Members can develop technical skills, problem-solving abilities, teamwork, leadership, communication, event management, and project development skills while collaborating with like-minded peers.
@@ -25,7 +25,7 @@ Coding Ninjas 10X stands out through its focus on large-scale, experience-driven
 No, showcasing personal projects is not mandatory. However, having projects to demonstrate your interest, skills, and initiative is always appreciated.
 
 **9) What is the recruitment process for the Coding Ninjas 10X Club?**
-The recruitment process begins with a Google Form application, followed by a personal interview for shortlisted candidates.
+The recruitment process begins with an application, followed by a personal interview for shortlisted candidates.
 
 **10) How can I get promoted to higher positions at coding ninjas club?**
 Show up in the club regularly, contribute your ideas and take initiatives in club activities and take up opportunities as team leads and for promotions.
@@ -38,7 +38,7 @@ Yes. Active members who consistently demonstrate initiative, responsibility, and
 
 **13) What are all the domains in technical and non-technical part of the club?**
 Technical domains: Web development, App development, AI/ML
-Non-technical domains: Corporate, Creatives, Sponsorship, Editorial
+Non-technical domains: Corporate, Creatives, Sponsorship
 
 **14) Can members switch domains after joining?**
 Domain switching is not permitted after joining. However, members can contribute to and be a part of multiple domains based on the club’s requirements and their interests.
@@ -50,7 +50,7 @@ Domain switching is not permitted after joining. However, members can contribute
 All first and second years in SRMIST.
 
 **2) How does the recruitment process go on for non-technical domains?**
-The recruitment process begins with a Google Form application, followed by a personal interview for shortlisted candidates.
+The recruitment process begins with an application, followed by a personal interview for shortlisted candidates.
 
 **3) Can I share ideas for future club events during the interview?**
 Yes, absolutely. We encourage applicants to share their ideas and suggestions.
@@ -89,7 +89,7 @@ Members can participate in workshops, hackathons, technical sessions, networking
 Participants should bring their college ID card and at least one laptop per team. Any additional requirements will be communicated by the organizers before the event.
 
 **2) How many members can be on a team?**
-Each team can have a maximum of 4 members.
+Each team can have a maximum of 4 members and a minimum of 2 members.
 
 **3) Is prior coding experience necessary to participate in Campus Quest 5.0?**
 No. Basic coding knowledge is sufficient, and several rounds focus on logical thinking, teamwork, and problem-solving rather than advanced programming.
@@ -161,10 +161,10 @@ The venue of the event is MiniHall 2.
 The event is taking place on 11th September 2026.
 
 **26) What is the starting time of the CampusQuest?**
-The event starts at 9:00 PM.
+The event starts at 9:00 AM.
 
 **27) What is the duration of CampusQuest?**
-The duration of the event is 9-5 PM.
+The duration of the event is 9 AM to 5 PM.
 
 **28) When is the ending time of CampusQuest?**
 The Event ends approximately at 5 PM.
