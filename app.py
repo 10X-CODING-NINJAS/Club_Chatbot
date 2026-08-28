@@ -48,9 +48,20 @@ def init_db():
     """Load or create the ChromaDB vector store."""
     global db
     logger.info("Initializing vector store...")
+
     try:
-        db = feeding_pipeline.main()
+        # Always use the same embedding model that was used
+        # to create the current local ChromaDB.
+        embedding_model = feeding_pipeline.LocalChromaEmbeddings()
+
+        db = feeding_pipeline.Chroma(
+            persist_directory=feeding_pipeline.DEFAULT_PERSIST_DIRECTORY,
+            embedding_function=embedding_model,
+            collection_metadata={"hnsw:space": "cosine"},
+        )
+
         logger.info("✅ Vector store initialized successfully.")
+
     except Exception as e:
         logger.error(f"Failed to initialize vector store: {e}")
 

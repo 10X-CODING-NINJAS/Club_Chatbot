@@ -39,6 +39,23 @@ DEFAULT_INFO_PATH = "info"
 DEFAULT_PERSIST_DIRECTORY = "db/chroma_db"
 
 
+class LocalChromaEmbeddings(Embeddings):
+    """
+    Local embedding model using ChromaDB's built-in ONNX model (all-MiniLM-L6-v2).
+    Runs 100% locally on CPU without API keys, network requests, or rate limits.
+    """
+
+    def __init__(self):
+        from chromadb.utils import embedding_functions
+        self._ef = embedding_functions.DefaultEmbeddingFunction()
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [[float(x) for x in vec] for vec in self._ef(texts)]
+
+    def embed_query(self, text: str) -> list[float]:
+        return [float(x) for x in self._ef([text])[0]]
+
+
 class OpenRouterEmbeddings(Embeddings):
     """
     Embedding model that calls the OpenRouter API.
@@ -50,29 +67,11 @@ class OpenRouterEmbeddings(Embeddings):
 
     def __init__(self, model: str, api_key: str,
                  base_url: str = "https://openrouter.ai/api/v1"):
-        """
-        Args:
-            model: OpenRouter embedding model identifier.
-            api_key: OpenRouter API key.
-            base_url: Base URL for the OpenRouter API.
-        """
         self.model = model
         self.api_key = api_key
         self.base_url = base_url
 
     def _call_api(self, texts: list[str]) -> list[list[float]]:
-        """
-        Send a batch of texts to the OpenRouter embedding endpoint.
-
-        Args:
-            texts: List of input strings to embed.
-
-        Returns:
-            List of embedding vectors, one per input string.
-
-        Raises:
-            requests.HTTPError: If the API request fails.
-        """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -91,30 +90,28 @@ class OpenRouterEmbeddings(Embeddings):
         return [item["embedding"] for item in data["data"]]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings for a list of documents."""
         return self._call_api(texts)
 
     def embed_query(self, text: str) -> list[float]:
-        """Generate an embedding for a single query string."""
         return self._call_api([text])[0]
 
 
-def get_embedding_model() -> OpenRouterEmbeddings:
+def get_embedding_model() -> Embeddings:
     """
-    Build the shared OpenRouter embedding model instance.
+    Build the embedding model instance.
 
-    Returns:
-        Configured OpenRouterEmbeddings instance.
-
-    Raises:
-        ValueError: If OPENROUTER_API_KEY is not set.
+    Uses LocalChromaEmbeddings by default to prevent OpenRouter rate limits (429).
     """
+    use_remote = os.getenv("USE_REMOTE_EMBEDDINGS", "false").lower() == "true"
     api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError(
-            "OPENROUTER_API_KEY is not set. Add it to your .env file."
-        )
-    return OpenRouterEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=api_key)
+
+    if use_remote and api_key:
+        try:
+            return OpenRouterEmbeddings(model=EMBEDDING_MODEL_NAME, api_key=api_key)
+        except Exception:
+            pass
+
+    return LocalChromaEmbeddings()
 
 
 def load_info(info_path: str = DEFAULT_INFO_PATH) -> list[Document]:
@@ -209,8 +206,8 @@ def main() -> Chroma:
     """
     Run the RAG ingestion pipeline.
 
-    If a vector store already exists at DEFAULT_PERSIST_DIRECTORY, it
-    is loaded directly. Otherwise, documents are loaded, split into
+    If a non-empty vector store already exists at DEFAULT_PERSIST_DIRECTORY,
+    it is loaded directly. Otherwise, documents are loaded, split into
     chunks, embedded, and saved as a new vector store.
 
     Returns:
@@ -219,11 +216,16 @@ def main() -> Chroma:
     embedding_model = get_embedding_model()
 
     if os.path.exists(DEFAULT_PERSIST_DIRECTORY):
-        return Chroma(
+        db = Chroma(
             persist_directory=DEFAULT_PERSIST_DIRECTORY,
             embedding_function=embedding_model,
             collection_metadata={"hnsw:space": "cosine"},
         )
+        try:
+            if db._collection.count() > 0:
+                return db
+        except Exception:
+            pass
 
     documents = load_info(DEFAULT_INFO_PATH)
     chunks = split_documents(documents)
