@@ -45,22 +45,17 @@ db = None
 
 
 def init_db():
-    """Load or create the ChromaDB vector store."""
+    """Load existing ChromaDB or create it from the club information."""
     global db
     logger.info("Initializing vector store...")
 
     try:
-        # Always use the same embedding model that was used
-        # to create the current local ChromaDB.
-        embedding_model = feeding_pipeline.LocalChromaEmbeddings()
+        db = feeding_pipeline.main()
 
-        db = feeding_pipeline.Chroma(
-            persist_directory=feeding_pipeline.DEFAULT_PERSIST_DIRECTORY,
-            embedding_function=embedding_model,
-            collection_metadata={"hnsw:space": "cosine"},
+        logger.info(
+            f"✅ Vector store initialized successfully. "
+            f"Chunks: {db._collection.count()}"
         )
-
-        logger.info("✅ Vector store initialized successfully.")
 
     except Exception as e:
         logger.error(f"Failed to initialize vector store: {e}")
@@ -118,6 +113,29 @@ def chat(request: ChatRequest):
 
         chat_history = sessions_history[session_id]
         user_question = request.message
+        
+                        # Handle simple greetings directly
+        message_lower = user_question.strip().lower()
+
+        greetings = {
+            "hi": "Hey there, web-slinger! 🕷️ What's on your mind?",
+            "hii": "Hieee! 🕷️ Your friendly neighborhood Spider-Bot is here! What's up?",
+            "hiii": "Hieee! 🕸️ Ready to swing into some club info?",
+            "hello": "Hello, web-slinger! 🕷️ What would you like to know about the club?",
+            "hey": "Heyyy! 🕷️ What's up? Need some intel on the club?",
+            "heyy": "Heyyy, web-slinger! 🕸️ How can I help?",
+            "hiee": "Hieee! 🕷️ Spider-Bot reporting for duty! What do you want to know?",
+            "what's up": "Just hanging around the web! 🕷️ What's up with you?",
+            "whats up": "Just chilling on the web! 🕸️ What can I help you with?",
+            "good morning": "Good morning, web-slinger! ☀️ Ready to uncover some club secrets?",
+            "good evening": "Good evening! 🌙 Spider-Bot is on patrol. What do you want to know?",
+        }
+
+        if message_lower in greetings:
+            return {
+                "response": greetings[message_lower],
+                "session_id": session_id
+            }
 
         if not db:
             raise HTTPException(status_code=500, detail="Vector store is not initialized")
