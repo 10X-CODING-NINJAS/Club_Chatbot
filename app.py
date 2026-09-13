@@ -36,29 +36,38 @@ logger = logging.getLogger("club-chatbot")
 # ---------------------------------------------------------------------------
 feeding_pipeline = importlib.import_module("1_data_feeding_pipeline")
 fallback_pipeline = importlib.import_module("5_fallback_with_ollama")
+club_pipeline = importlib.import_module("2_club_retrieval_pipeline")
 
 # ---------------------------------------------------------------------------
 # In-memory state
 # ---------------------------------------------------------------------------
 sessions_history: Dict[str, List[Dict[str, str]]] = {}
 db = None
+club_retriever = None
 
 
 def init_db():
     """Load existing ChromaDB or create it from the club information."""
-    global db
+    global db, club_retriever
     logger.info("Initializing vector store...")
 
     try:
         db = feeding_pipeline.main()
 
         logger.info(
-            f"✅ Vector store initialized successfully. "
+            f"✅ Event Vector store (Chroma) initialized successfully. "
             f"Chunks: {db._collection.count()}"
         )
 
     except Exception as e:
-        logger.error(f"Failed to initialize vector store: {e}")
+        logger.error(f"Failed to initialize Event vector store: {e}")
+        
+    try:
+        club_retriever = club_pipeline.get_retriever()
+        if club_retriever:
+            logger.info("✅ Club Vector store (Qdrant) initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to initialize Club vector store: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -194,11 +203,27 @@ def chat(request: ChatRequest):
                 search_question = user_question
 
         # Step 2: Retrieve documents
-        retriever = db.as_retriever(search_kwargs={"k": 3})
-        docs = retriever.invoke(search_question)
+        context_parts = []
+        
+        if db:
+            retriever = db.as_retriever(search_kwargs={"k": 3})
+            docs = retriever.invoke(search_question)
+            if docs:
+                context_parts.append("--- Event Information ---")
+                context_parts.extend([doc.page_content for doc in docs])
+                
+        if club_retriever:
+            club_docs = club_retriever.retrieve(search_question, top_k=3)
+            if club_docs:
+                context_parts.append("--- Club FAQ Information ---")
+                for doc in club_docs:
+                    source = doc['metadata'].get('source', '')
+                    section = doc['metadata'].get('section', '')
+                    q_num = doc['metadata'].get('question_number', '')
+                    context_parts.append(f"[Source: {source} | Section: {section} | Q: {q_num}]\n{doc['content']}")
 
-                # Step 3: Build final prompt
-        context = "\n\n".join([doc.page_content for doc in docs])
+        # Step 3: Build final prompt
+        context = "\n\n".join(context_parts)
 
         combined_input = f"""
         Answer this question:
@@ -364,7 +389,8 @@ def reset_chat(request: ResetRequest):
 def health_check():
     return {
         "status": "ok",
-        "vector_store": db is not None
+        "event_vector_store": db is not None,
+        "club_vector_store": club_retriever is not None
     }
 
 @app.post("/ingest")

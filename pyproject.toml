@@ -14,4 +14,7 @@ dependencies = [
     "chromadb",
     "python-dotenv",
     "requests",
+    "qdrant-client",
+    "fastembed",
+    "PyPDF2",
 ]
