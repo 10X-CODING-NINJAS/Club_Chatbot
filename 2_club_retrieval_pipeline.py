@@ -13,14 +13,14 @@ if not QDRANT_URL:
     QDRANT_URL = "db/qdrant_db"
 
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "cn10x_club_knowledge")
-EMBEDDING_MODEL = "BAAI/bge-m3"
+EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 
 class ClubRetriever:
     """
-    Handles retrieval of Club FAQ information using Qdrant and fastembed BGE-M3 embeddings.
+    Handles retrieval of Club FAQ information using Qdrant and fastembed embeddings.
     """
     def __init__(self):
-        print("Initializing BGE-M3 embedding model...")
+        print(f"Initializing {EMBEDDING_MODEL} embedding model...")
         self.embedding_model = TextEmbedding(model_name=EMBEDDING_MODEL)
         
         if QDRANT_URL.startswith("http"):
@@ -41,14 +41,14 @@ class ClubRetriever:
         # Embed the query
         query_embedding = list(self.embedding_model.embed([query]))[0].tolist()
         
-        search_result = self.client.search(
+        search_result = self.client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=query_embedding,
+            query=query_embedding,
             limit=top_k
         )
         
         results = []
-        for hit in search_result:
+        for hit in search_result.points:
             payload = hit.payload
             results.append({
                 "content": payload.get("text", ""),

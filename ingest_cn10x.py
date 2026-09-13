@@ -17,7 +17,7 @@ if not QDRANT_URL:
     QDRANT_URL = "db/qdrant_db" # Local SQLite mode
 
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "cn10x_club_knowledge")
-EMBEDDING_MODEL = "BAAI/bge-m3"
+EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 
 def parse_pdf(file_path):
     print(f"Reading PDF from {file_path}...")
@@ -93,7 +93,7 @@ def main():
     qa_pairs = parse_pdf(pdf_path)
     print(f"Extracted {len(qa_pairs)} QA pairs.")
     
-    print("Initializing embedding model (BAAI/bge-m3)...")
+    print(f"Initializing embedding model ({EMBEDDING_MODEL})...")
     embedding_model = TextEmbedding(model_name=EMBEDDING_MODEL)
     
     # Initialize Qdrant Client
@@ -111,7 +111,7 @@ def main():
         
     client.create_collection(
         collection_name=COLLECTION_NAME,
-        vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+        vectors_config=VectorParams(size=384, distance=Distance.COSINE),
     )
     
     points = []
@@ -143,7 +143,7 @@ def main():
         points=points
     )
     
-    print(f"✅ Successfully ingested {len(points)} vectors into {COLLECTION_NAME}.")
+    print(f"[SUCCESS] Successfully ingested {len(points)} vectors into {COLLECTION_NAME}.")
 
 if __name__ == "__main__":
     main()
