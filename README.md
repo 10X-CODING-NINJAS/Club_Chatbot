@@ -4,28 +4,31 @@ RAG-powered chatbot API for the **Coding Ninjas 10X Club**. Meet **Spider-Bot** 
 
 ## Architecture
 
-```
-Website (Frontend)  →  FastAPI Server (app.py)  →  ChromaDB (Vector Store)
+```text
+Website (Frontend)  →  FastAPI Server (app.py)
                                 ↓
-                    LLM Fallback Chain (5_fallback_with_ollama.py)
-                    ├── Tier 1: Mistral
-                    ├── Tier 2: Groq
-                    ├── Tier 3: OpenRouter
-                    └── Tier 4: Ollama
+                 Club FAQ Knowledge (Qdrant, Semantic QA pairs)
+                                ↓
+            LLM Fallback Chain (5_fallback_with_ollama.py)
+            ├── Tier 1: Mistral
+            ├── Tier 2: Groq
+            ├── Tier 3: OpenRouter
+            └── Tier 4: Ollama
 ```
 
 **How it works:**
 1. User asks a question via the `/chat` API
-2. The question is embedded and searched against club data in ChromaDB
-3. Relevant chunks + conversation history are sent to the LLM
+2. The question is searched against Club FAQs in Qdrant
+3. Relevant chunks from the vector database + conversation history are sent to the LLM
 4. Spider-Bot responds in character 🕸️
 
 ## Project Structure
 
 ```
 ├── app.py                      # FastAPI server (main entry point)
-├── 1_data_feeding_pipeline.py  # Document ingestion → ChromaDB
+├── 2_club_retrieval_pipeline.py# Qdrant Retrieval → Club FAQs
 ├── 5_fallback_with_ollama.py   # LLM provider cascade
+├── ingest_cn10x.py             # Qdrant Ingestion Pipeline for FAQs
 ├── info/                       # Source .txt files for the knowledge base
 │   └── ClubQuestions.txt
 ├── pyproject.toml              # Dependencies
@@ -57,6 +60,12 @@ OLLAMA_MODEL=llama3.2
 
 # Timeout (seconds)
 REQUEST_TIMEOUT=30
+
+# Qdrant Vector Database (For CN10X Club Knowledge)
+# Leave QDRANT_URL empty to use local on-disk storage during development
+QDRANT_URL=
+QDRANT_API_KEY=
+QDRANT_COLLECTION=cn10x_club_knowledge
 ```
 
 ### 3. Run the server
@@ -65,7 +74,19 @@ REQUEST_TIMEOUT=30
 uv run uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The server will automatically ingest data from `info/` on first startup.
+The server will automatically connect to the Qdrant database on startup.
+
+### 4. Setup Club Knowledge Base (Qdrant)
+
+To populate the Qdrant vector database with the club FAQs, run the ingestion script:
+
+```bash
+python ingest_cn10x.py
+```
+
+This script parses the PDF, uses `fastembed` to dynamically download the `bge-small-en-v1.5` embedding model, and extracts semantic Question-Answer pairs. 
+- For local development, it creates a local Qdrant file.
+- For production, configure `QDRANT_URL` and `QDRANT_API_KEY` in your `.env` to push directly to a hosted Qdrant cluster (e.g., Qdrant Cloud or a Docker container).
 
 **API docs** will be available at: `http://localhost:8000/docs`
 
@@ -255,8 +276,8 @@ nohup uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2 &
 | Component | Technology |
 |-----------|------------|
 | API Framework | FastAPI |
-| Vector DB | ChromaDB (local, persistent) |
-| Embeddings | `nvidia/llama-nemotron-embed-vl-1b-v2:free` via OpenRouter |
+| Vector DB | Qdrant (Club FAQs) |
+| Embeddings | `bge-small-en-v1.5` (via fastembed) & OpenRouter API |
 | LLM | 4-tier fallback: Mistral → Groq → OpenRouter → Ollama |
 | Orchestration | LangChain |
 | Package Manager | uv |
