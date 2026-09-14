@@ -7,9 +7,7 @@ RAG-powered chatbot API for the **Coding Ninjas 10X Club**. Meet **Spider-Bot** 
 ```text
 Website (Frontend)  →  FastAPI Server (app.py)
                                 ↓
-                 Dual Retrieval & Context Merging
-                 ├── Event Knowledge (ChromaDB, info/ .txt files)
-                 └── Club FAQ Knowledge (Qdrant, Semantic QA pairs)
+                 Club FAQ Knowledge (Qdrant, Semantic QA pairs)
                                 ↓
             LLM Fallback Chain (5_fallback_with_ollama.py)
             ├── Tier 1: Mistral
@@ -20,15 +18,14 @@ Website (Frontend)  →  FastAPI Server (app.py)
 
 **How it works:**
 1. User asks a question via the `/chat` API
-2. The question is searched concurrently against Event data in ChromaDB and Club FAQs in Qdrant
-3. Relevant chunks from both vector databases + conversation history are sent to the LLM
+2. The question is searched against Club FAQs in Qdrant
+3. Relevant chunks from the vector database + conversation history are sent to the LLM
 4. Spider-Bot responds in character 🕸️
 
 ## Project Structure
 
 ```
 ├── app.py                      # FastAPI server (main entry point)
-├── 1_data_feeding_pipeline.py  # Document ingestion → ChromaDB
 ├── 2_club_retrieval_pipeline.py# Qdrant Retrieval → Club FAQs
 ├── 5_fallback_with_ollama.py   # LLM provider cascade
 ├── ingest_cn10x.py             # Qdrant Ingestion Pipeline for FAQs
@@ -77,11 +74,11 @@ QDRANT_COLLECTION=cn10x_club_knowledge
 uv run uvicorn app:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-The server will automatically ingest Event Knowledge data from `info/` on first startup.
+The server will automatically connect to the Qdrant database on startup.
 
 ### 4. Setup Club Knowledge Base (Qdrant)
 
-To populate the Qdrant vector database with the club FAQs, run the ingestion script once:
+To populate the Qdrant vector database with the club FAQs, run the ingestion script:
 
 ```bash
 python ingest_cn10x.py
@@ -279,7 +276,7 @@ nohup uv run uvicorn app:app --host 0.0.0.0 --port 8000 --workers 2 &
 | Component | Technology |
 |-----------|------------|
 | API Framework | FastAPI |
-| Vector DB | ChromaDB (Event Knowledge) & Qdrant (Club FAQs) |
+| Vector DB | Qdrant (Club FAQs) |
 | Embeddings | `bge-small-en-v1.5` (via fastembed) & OpenRouter API |
 | LLM | 4-tier fallback: Mistral → Groq → OpenRouter → Ollama |
 | Orchestration | LangChain |

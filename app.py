@@ -34,7 +34,6 @@ logger = logging.getLogger("club-chatbot")
 # ---------------------------------------------------------------------------
 # Dynamic imports (filenames start with numbers)
 # ---------------------------------------------------------------------------
-feeding_pipeline = importlib.import_module("1_data_feeding_pipeline")
 fallback_pipeline = importlib.import_module("5_fallback_with_ollama")
 club_pipeline = importlib.import_module("2_club_retrieval_pipeline")
 
@@ -42,25 +41,13 @@ club_pipeline = importlib.import_module("2_club_retrieval_pipeline")
 # In-memory state
 # ---------------------------------------------------------------------------
 sessions_history: Dict[str, List[Dict[str, str]]] = {}
-db = None
 club_retriever = None
 
 
 def init_db():
-    """Load existing ChromaDB or create it from the club information."""
-    global db, club_retriever
+    """Load Qdrant vector database."""
+    global club_retriever
     logger.info("Initializing vector store...")
-
-    try:
-        db = feeding_pipeline.main()
-
-        logger.info(
-            f"✅ Event Vector store (Chroma) initialized successfully. "
-            f"Chunks: {db._collection.count()}"
-        )
-
-    except Exception as e:
-        logger.error(f"Failed to initialize Event vector store: {e}")
         
     try:
         club_retriever = club_pipeline.get_retriever()
@@ -146,7 +133,7 @@ def chat(request: ChatRequest):
                 "session_id": session_id
             }
 
-        if not db:
+        if not club_retriever:
             raise HTTPException(status_code=500, detail="Vector store is not initialized")
 
             # Step 1: Prepare search question
@@ -205,17 +192,9 @@ def chat(request: ChatRequest):
         # Step 2: Retrieve documents
         context_parts = []
         
-        if db:
-            retriever = db.as_retriever(search_kwargs={"k": 3})
-            docs = retriever.invoke(search_question)
-            if docs:
-                context_parts.append("--- Event Information ---")
-                context_parts.extend([doc.page_content for doc in docs])
-                
         if club_retriever:
             club_docs = club_retriever.retrieve(search_question, top_k=3)
             if club_docs:
-                context_parts.append("--- Club FAQ Information ---")
                 for doc in club_docs:
                     source = doc['metadata'].get('source', '')
                     section = doc['metadata'].get('section', '')
@@ -389,26 +368,21 @@ def reset_chat(request: ResetRequest):
 def health_check():
     return {
         "status": "ok",
-        "event_vector_store": db is not None,
-        "club_vector_store": club_retriever is not None
+        "vector_store": club_retriever is not None
     }
 
 @app.post("/ingest")
 def ingest_data():
-    global db
     try:
-        embedding_model = feeding_pipeline.get_embedding_model()
-        persist_dir = feeding_pipeline.DEFAULT_PERSIST_DIRECTORY
-        
-        # To truly rebuild, we clear the old DB directory
-        if os.path.exists(persist_dir):
-            shutil.rmtree(persist_dir)
+        import subprocess
+        # Run the new ingestion script in a subprocess to rebuild the Qdrant db
+        result = subprocess.run(["python", "ingest_cn10x.py"], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise Exception(result.stderr)
             
-        documents = feeding_pipeline.load_info(feeding_pipeline.DEFAULT_INFO_PATH)
-        chunks = feeding_pipeline.split_documents(documents)
-        db = feeding_pipeline.create_vector_store(chunks, embedding_model, persist_dir)
-        
-        return {"message": "Ingestion complete", "chunks": len(chunks)}
+        # Re-initialize the retriever to load new data
+        init_db()
+        return {"message": "Ingestion complete", "logs": result.stdout}
     except Exception as e:
         logger.error(f"Error during ingestion: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
